@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#02040a">
+<title>BIKE GUARDIAN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;700;800&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{--bg:#02040a;--navy:#0a1224;--card:#0d1930;--line:#1b2c4d;--blue:#2d8cff;--ice:#8fc4ff;--red:#ff3b4e;--amb:#ffb020;--txt:#e8eefc;--mut:#8394b8}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;background:var(--bg);color:var(--txt);font:15px/1.5 Manrope,system-ui,sans-serif;-webkit-tap-highlight-color:transparent}
+h1,h2,h3,.num{font-family:Sora,sans-serif}
+header{position:fixed;top:0;left:0;right:0;height:calc(54px + env(safe-area-inset-top));padding-top:env(safe-area-inset-top);background:linear-gradient(#0a1224,#050a16);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding-inline:16px;z-index:900}
+.logo{font:800 17px Sora;letter-spacing:.12em}.logo b{color:var(--blue)}
+main{padding:calc(66px + env(safe-area-inset-top)) 14px calc(88px + env(safe-area-inset-bottom));max-width:720px;margin:auto}
+.tab{display:none}.tab.on{display:block}
+nav{position:fixed;bottom:0;left:0;right:0;display:grid;grid-template-columns:repeat(6,1fr);background:#050a16;border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:900}
+nav button{background:none;border:0;color:var(--mut);padding:9px 0 8px;font:600 10.5px Manrope;display:flex;flex-direction:column;align-items:center;gap:2px;transition:color .2s}
+nav button span{font-size:19px;filter:grayscale(1) brightness(1.2);transition:filter .2s}
+nav button.on{color:var(--blue)}nav button.on span{filter:none}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px;margin-bottom:12px}
+.card h3{font-size:15px;margin-bottom:8px}
+.mut{color:var(--mut);font-size:13px}
+#map,#zmap{height:52vh;min-height:300px;border-radius:16px;border:1px solid var(--line);margin-bottom:12px;background:#050a16}
+#zmap{height:40vh}
+.leaflet-tile-pane{filter:invert(1) hue-rotate(205deg) brightness(.82) contrast(.95) saturate(.55)}
+.pin{width:22px;height:22px;border-radius:50%;background:var(--c);border:3px solid #fff;box-shadow:0 0 0 6px color-mix(in srgb,var(--c) 30%,transparent),0 2px 10px #000}
+.pill{display:inline-flex;align-items:center;gap:7px;padding:5px 12px;border-radius:99px;font:700 12px Sora;border:1px solid currentColor}
+.pill i{width:8px;height:8px;border-radius:50%;background:currentColor}
+.s-live{color:#35e0a1}.s-live i{animation:pulse 1.6s infinite}
+.s-stale{color:var(--amb)}.s-offline,.s-none{color:var(--red)}.s-demo{color:var(--ice)}.s-manual{color:var(--amb)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.k{font-size:12px;color:var(--mut)}.v{font:700 17px Sora;word-break:break-all}
+.row{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+button.b{background:var(--blue);color:#fff;border:0;border-radius:12px;padding:12px 16px;font:700 14px Manrope;transition:transform .1s,opacity .2s}
+button.b:active{transform:scale(.97)}button.b:disabled{opacity:.35}
+button.g{background:#122244;color:var(--ice)}button.r{background:var(--red)}
+.btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}.btns .b{flex:1;min-width:120px}
+input{width:100%;background:#060d1e;border:1px solid var(--line);border-radius:10px;color:var(--txt);padding:11px;font:15px Manrope;margin:4px 0 8px}
+input:focus,button:focus-visible{outline:2px solid var(--blue)}
+label{font-size:12px;color:var(--mut)}
+.msg{margin-top:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;background:#0a1a38;border:1px solid var(--line)}
+.msg.err{background:#2a0b12;border-color:var(--red);color:#ffc6cc}.msg.ok{border-color:#35e0a1}
+.item{padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}.item:last-child{border:0}
+#alert{display:none;position:fixed;top:calc(54px + env(safe-area-inset-top));left:0;right:0;z-index:950;background:var(--red);padding:12px 16px;font-weight:700;animation:flash 1s 4}
+#alert.on{display:flex;justify-content:space-between;gap:10px}#alert button{background:#0006;color:#fff;border:0;border-radius:8px;padding:4px 10px}
+#login{position:fixed;inset:0;background:radial-gradient(circle at 50% 0,#0f2a5c,#02040a 60%);z-index:1000;display:flex;align-items:center;padding:24px}
+#login>div{width:100%;max-width:380px;margin:auto}
+#login h1{font-size:30px;letter-spacing:.1em;margin-bottom:6px}
+.badge{font:700 11px Sora;padding:3px 9px;border-radius:6px;background:#122244;color:var(--ice)}
+.badge.m{background:#3a2a05;color:var(--amb)}
+ol,ul{padding-left:20px}li{margin:6px 0}
+@keyframes pulse{50%{opacity:.25}}@keyframes flash{50%{background:#8c0f1c}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important}}
+</style>
+</head>
+<body>
+
+<div id="login"><div>
+  <h1>BIKE <span style="color:var(--blue)">GUARDIAN</span></h1>
+  <p class="mut" style="margin-bottom:18px">Private tracker for your own motorcycle. Sign in to continue.</p>
+  <label for="em">Email</label><input id="em" type="email" autocomplete="email">
+  <label for="pw">Password (min. 8 characters)</label><input id="pw" type="password" autocomplete="current-password">
+  <div class="btns"><button class="b" id="signin">Sign in</button><button class="b g" id="signup">Create owner account</button></div>
+  <div class="msg" id="lmsg" style="display:none"></div>
+</div></div>
+
+<div id="alert"><span id="alertTxt"></span><button id="alertX">Dismiss</button></div>
+
+<header><div class="logo">BIKE <b>GUARDIAN</b></div><span class="pill s-none" id="hpill"><i></i><span>NO DATA</span></span></header>
+
+<main>
+<!-- LIVE MAP -->
+<section class="tab on" id="t-map">
+  <div id="map"></div>
+  <div class="card">
+    <div class="row"><span class="pill s-none" id="pill"><i></i><span>NO DATA</span></span><span class="badge" id="srcBadge" style="display:none"></span></div>
+    <div class="grid" style="margin-top:12px">
+      <div><div class="k">Latitude</div><div class="v" id="lat">–</div></div>
+      <div><div class="k">Longitude</div><div class="v" id="lng">–</div></div>
+      <div><div class="k">Accuracy</div><div class="v" id="acc">–</div></div>
+      <div><div class="k">Last update</div><div class="v" id="age">–</div></div>
+    </div>
+    <p class="mut" id="when" style="margin-top:8px"></p>
+    <div class="btns"><button class="b g" id="center">Centre on bike</button></div>
+  </div>
+  <p class="mut" id="mapNote"></p>
+</section>
+
+<!-- TRACKER -->
+<section class="tab" id="t-trk">
+  <div class="card">
+    <h3>Tracker status</h3>
+    <div class="grid">
+      <div><div class="k">Bike data</div><div class="v" id="tsStatus">–</div></div>
+      <div><div class="k">Network</div><div class="v" id="net">–</div></div>
+    </div>
+  </div>
+  <div class="card">
+    <h3>This phone as the bike tracker</h3>
+    <p class="mut">Open this page on the Android phone mounted on the bike and sign in with the same account. Tap <b>Register this phone</b> once, then <b>Start tracking</b>. Android will ask for location permission – choose <b>Allow</b> (precise).</p>
+    <p class="mut" style="margin-top:8px"><b>Important:</b> a web page can stop tracking when you close it, switch apps or the screen turns off. Keep this page open and the screen on (Bike Guardian requests a screen wake lock while tracking). Use a charger or bike USB power.</p>
+    <p class="k" style="margin-top:8px">Device ID: <b id="devId"></b> · <span id="reg"></span></p>
+    <div class="btns">
+      <button class="b g" id="register">Register this phone</button>
+      <button class="b" id="start">Start tracking</button>
+      <button class="b r" id="stop" disabled>Stop tracking</button>
+    </div>
+    <div class="msg" id="tmsg">Not tracking.</div>
+    <p class="mut" id="tstats" style="margin-top:8px"></p>
+  </div>
+  <div class="card">
+    <h3>Manual location</h3>
+    <p class="mut">Type coordinates if GPS is unavailable. These are saved as <b>MANUAL</b> points – never shown as live GPS.</p>
+    <label for="mlat">Latitude</label><input id="mlat" inputmode="decimal" placeholder="e.g. 12.3456">
+    <label for="mlng">Longitude</label><input id="mlng" inputmode="decimal" placeholder="e.g. 98.7654">
+    <button class="b g" id="msend" style="width:100%">Send manual location</button>
+  </div>
+</section>
+
+<!-- SAFE ZONE -->
+<section class="tab" id="t-zone">
+  <div class="card">
+    <h3>Safe zone</h3>
+    <p class="mut">Tap the map to choose your parking spot, or enter coordinates. Set a radius in metres.</p>
+    <div class="pill s-none" id="zstate" style="margin-top:10px"><i></i><span>No safe zone set</span></div>
+  </div>
+  <div id="zmap"></div>
+  <div class="card">
+    <div class="grid">
+      <div><label for="zlat">Latitude</label><input id="zlat" inputmode="decimal"></div>
+      <div><label for="zlng">Longitude</label><input id="zlng" inputmode="decimal"></div>
+    </div>
+    <label for="zr">Radius (metres, 10–100000)</label><input id="zr" inputmode="numeric" value="100">
+    <div class="btns"><button class="b g" id="zhere">Use my current location</button><button class="b" id="zsave">Save safe zone</button><button class="b g" id="zdel">Remove</button></div>
+    <div class="msg" id="zmsg" style="display:none"></div>
+  </div>
+  <div class="card">
+    <h3>How alerts work</h3>
+    <p class="mut">An alert fires only when a <b>new location update</b> arrives from the tracker that is outside the zone and this dashboard is open. If the phone is off, has no signal or tracking stopped, no update arrives and <b>no alert can fire</b>. Background push alerts need a server (Cloud Functions) and are not included.</p>
+  </div>
+  <div class="card"><h3>Alerts this session</h3><div id="alerts" class="mut">None yet.</div></div>
+</section>
+
+<!-- HISTORY -->
+<section class="tab" id="t-his">
+  <div class="card">
+    <div class="row"><h3>Location history</h3><button class="b g" id="hclear">Clear</button></div>
+    <p class="mut">Latest 100 saved updates, newest first.</p>
+    <div id="hlist" style="margin-top:8px"></div>
+  </div>
+</section>
+
+<!-- SETTINGS -->
+<section class="tab" id="t-set">
+  <div class="card">
+    <h3>Demo mode</h3>
+    <p class="mut">Shows a sample point labelled DEMO. Nothing is read from or written to your tracker while on.</p>
+    <div class="btns"><button class="b g" id="demo">Demo mode: off</button></div>
+  </div>
+  <div class="card">
+    <h3>Timing</h3>
+    <label for="stale">Mark data stale after (seconds)</label><input id="stale" inputmode="numeric">
+    <label for="intv">Phone sends an update every (seconds, min 3)</label><input id="intv" inputmode="numeric">
+    <div class="btns"><button class="b" id="ssave">Save</button></div>
+  </div>
+  <div class="card">
+    <h3>Notifications &amp; account</h3>
+    <p class="mut" id="who"></p>
+    <div class="btns"><button class="b g" id="notif">Allow alert notifications</button><button class="b r" id="out">Sign out</button></div>
+  </div>
+</section>
+
+<!-- HELP -->
+<section class="tab" id="t-help">
+  <div class="card"><h3>Quick start</h3><ol>
+    <li>On the <b>phone on the bike</b>: sign in → Tracker → Register this phone → Start tracking → Allow location.</li>
+    <li>On <b>your own phone</b>: sign in → Live Map. A marker appears only after real updates arrive.</li>
+    <li>Set a <b>Safe Zone</b> where the bike is parked.</li>
+  </ol></div>
+  <div class="card"><h3>Status meanings</h3><ul>
+    <li><b>LIVE</b> – update received within your stale limit.</li><li><b>STALE</b> – no update for a while; position may be old.</li>
+    <li><b>OFFLINE</b> – no update for 5× the stale limit.</li><li><b>MANUAL</b> – typed coordinates, not GPS.</li><li><b>DEMO</b> – sample data only.</li></ul></div>
+  <div class="card"><h3>Limits</h3><p class="mut">Phone browsers throttle web pages in the background. Accuracy depends on sky view and phone GPS. Only your own signed-in account can read or write data. This app does not track any other phone, number or vehicle.</p></div>
+</section>
+</main>
+
+<nav>
+  <button data-t="map" class="on"><span>🗺️</span>Map</button>
+  <button data-t="trk"><span>📡</span>Tracker</button>
+  <button data-t="zone"><span>🛡️</span>Zone</button>
+  <button data-t="his"><span>🕘</span>History</button>
+  <button data-t="set"><span>⚙️</span>Settings</button>
+  <button data-t="help"><span>❓</span>Help</button>
+</nav>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+setTimeout(function(){if(window.__bgReady)return;var e=document.getElementById('lmsg');e.style.display='block';e.className='msg err';
+e.textContent='The app could not start. Open it from your own https:// site (not the Claude preview, which blocks Firebase), and check you are online.';},4000);
+</script>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {getAuth,onAuthStateChanged,signInWithEmailAndPassword,createUserWithEmailAndPassword,signOut} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {getDatabase,ref,onValue,set,push,remove,query,limitToLast,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+// >>> PASTE YOUR FIREBASE CONFIG HERE (replace the PASTE_ values) <<<
+// Paste YOUR Firebase web-app config here (Firebase Console > Project settings > Your apps > Web app).
+// These values identify your project; they are NOT secret. Security comes from the database rules.
+const firebaseConfig = {
+  apiKey: "PASTE_API_KEY",
+  authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
+  databaseURL: "https://PASTE_PROJECT_ID-default-rtdb.firebaseio.com",
+  projectId: "PASTE_PROJECT_ID",
+  appId: "PASTE_APP_ID"
+};
+
+
+window.__bgReady=1;
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const lmsg=(t)=>{const e=$('#lmsg');e.style.display='block';e.className='msg err';e.textContent=t};
+if(firebaseConfig.apiKey.startsWith('PASTE')){lmsg('Setup needed: paste your Firebase config near the top of the script in index.html (see README).');throw new Error('no config')}
+const app=initializeApp(firebaseConfig),auth=getAuth(app),db=getDatabase(app);
+
+let U=null,unsubs=[],offset=0,latest=null,zone=null,hist=[],authorized={},first=true,inside=null,sessionAlerts=[];
+let demo=localStorage.bg_demo==='1';
+const devId=localStorage.bg_dev||(localStorage.bg_dev='dev-'+Math.random().toString(36).slice(2,8));
+const stale=()=>+(localStorage.bg_stale||120),intv=()=>Math.max(3,+(localStorage.bg_int||10));
+const DEMO={lat:51.5007,lng:-0.1246,acc:15,src:'demo'}; // sample only, shown in DEMO MODE
+$('#devId').textContent=devId;
+
+// ---------- auth ----------
+const cred=()=>[auth,$('#em').value.trim(),$('#pw').value];
+const authErr=e=>lmsg(({'auth/invalid-credential':'Wrong email or password.','auth/email-already-in-use':'Account exists – use Sign in.','auth/weak-password':'Use at least 8 characters.','auth/operation-not-allowed':'Sign-up is disabled (good). Use Sign in.','auth/network-request-failed':'No network connection.'})[e.code]||e.message);
+$('#signin').onclick=()=>signInWithEmailAndPassword(...cred()).catch(authErr);
+$('#signup').onclick=()=>createUserWithEmailAndPassword(...cred()).catch(authErr);
+$('#out').onclick=()=>signOut(auth);
+onAuthStateChanged(auth,u=>{
+  unsubs.forEach(f=>f());unsubs=[];U=u;
+  $('#login').style.display=u?'none':'flex';
+  if(!u){latest=null;zone=null;hist=[];draw();return}
+  $('#who').textContent='Signed in as '+u.email;
+  const b=`users/${u.uid}`;
+  unsubs.push(onValue(ref(db,'.info/serverTimeOffset'),s=>offset=s.val()||0));
+  unsubs.push(onValue(ref(db,'.info/connected'),s=>{$('#net').textContent=s.val()?'Connected':'Offline';$('#net').style.color=s.val()?'#35e0a1':'var(--red)'}));
+  unsubs.push(onValue(ref(db,b+'/latest'),s=>{
+    let best=null;for(const[k,v]of Object.entries(s.val()||{}))if(!best||v.ts>best.ts)best={...v,dev:k};
+    const changed=!latest||!best||best.ts!==latest.ts;latest=best;
+    if(changed&&best&&!demo)checkZone(best);draw();
+  },e=>lmsg('Database error: '+e.message)));
+  unsubs.push(onValue(ref(db,b+'/config/zone'),s=>{zone=s.val();drawZone();draw()}));
+  unsubs.push(onValue(ref(db,b+'/authorized'),s=>{authorized=s.val()||{};$('#reg').textContent=authorized[devId]?'Registered ✔':'Not registered';$('#reg').style.color=authorized[devId]?'#35e0a1':'var(--amb)'}));
+  unsubs.push(onValue(query(ref(db,b+'/history'),limitToLast(100)),s=>{hist=Object.values(s.val()||{}).sort((a,b)=>a.ts-b.ts);drawHist();draw()}));
+});
+
+// ---------- nav ----------
+$$('nav button').forEach(b=>b.onclick=()=>{
+  $$('nav button').forEach(x=>x.classList.toggle('on',x===b));
+  $$('.tab').forEach(t=>t.classList.toggle('on',t.id==='t-'+b.dataset.t));
+  setTimeout(()=>{map.invalidateSize();zmap.invalidateSize()},50);scrollTo(0,0);
+});
+
+// ---------- maps ----------
+const mk=id=>{const m=L.map(id,{zoomControl:false}).setView([20,0],2);L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(m);return m};
+const map=mk('map'),zmap=mk('zmap');
+const pin=c=>L.divIcon({className:'',html:`<div class="pin" style="--c:${c}"></div>`,iconSize:[22,22],iconAnchor:[11,11]});
+let marker=null,accC=null,zoneC=null,trail=L.polyline([],{color:'#2d8cff',weight:3,opacity:.7}).addTo(map),zc=null,zpin=null,zcircle=null;
+const COL={live:'#2d8cff',stale:'#ffb020',offline:'#ff3b4e',demo:'#8fc4ff',manual:'#ffb020'};
+
+// ---------- helpers ----------
+const view=()=>demo?{...DEMO,ts:Date.now()+offset}:latest;
+const now=()=>Date.now()+offset;
+function status(){const v=view();if(!v)return'none';if(v.src==='demo')return'demo';const a=(now()-v.ts)/1000;
+  if(a>stale()*5)return'offline';if(a>stale())return'stale';return v.src==='manual'?'manual':'live'}
+const LBL={none:'NO DATA',live:'LIVE GPS',stale:'STALE',offline:'OFFLINE',demo:'DEMO MODE',manual:'MANUAL POINT'};
+const ago=s=>s<60?Math.round(s)+' s ago':s<3600?Math.round(s/60)+' min ago':s<86400?(s/3600).toFixed(1)+' h ago':Math.round(s/86400)+' d ago';
+const dist=(a,b,c,d)=>{const R=6371000,r=Math.PI/180,x=(c-a)*r,y=(d-b)*r,h=Math.sin(x/2)**2+Math.cos(a*r)*Math.cos(c*r)*Math.sin(y/2)**2;return 2*R*Math.asin(Math.sqrt(h))};
+const setPill=s=>{[$('#pill'),$('#hpill')].forEach(p=>{p.className='pill s-'+s;p.querySelector('span').textContent=LBL[s]})};
+
+function draw(){
+  const v=view(),s=status();setPill(s);
+  $('#tsStatus').textContent=LBL[s];
+  const sb=$('#srcBadge');sb.style.display=v?'inline-block':'none';
+  if(v){sb.textContent=v.src==='gps'?'GPS':v.src.toUpperCase();sb.className='badge'+(v.src==='manual'?' m':'')}
+  if(!v){['lat','lng','acc','age'].forEach(i=>$('#'+i).textContent='–');$('#when').textContent='';
+    $('#mapNote').textContent='No location received yet. Start tracking on the bike phone (Tracker tab) – nothing is shown until real updates arrive.';
+    marker&&marker.remove();marker=null;accC&&accC.remove();accC=null;return}
+  $('#lat').textContent=v.lat.toFixed(6);$('#lng').textContent=v.lng.toFixed(6);
+  $('#acc').textContent=v.acc?'±'+v.acc+' m':'n/a';
+  $('#age').textContent=v.src==='demo'?'sample':ago((now()-v.ts)/1000);
+  $('#when').textContent=v.src==='demo'?'DEMO MODE – sample coordinates, not your bike.':new Date(v.ts).toLocaleString()+(v.src==='manual'?' · typed by hand, not GPS':'');
+  $('#mapNote').textContent=s==='stale'||s==='offline'?'⚠ This is the last KNOWN position. The tracker has not reported recently – the bike may have moved.':'';
+  const ll=[v.lat,v.lng],c=COL[s]||COL.live;
+  if(!marker){marker=L.marker(ll,{icon:pin(c)}).addTo(map)}else{marker.setLatLng(ll).setIcon(pin(c))}
+  accC&&accC.remove();if(v.acc)accC=L.circle(ll,{radius:v.acc,color:c,weight:1,fillOpacity:.1}).addTo(map);
+  if(first){map.setView(ll,16);first=false}
+  trail.setLatLngs(demo?[]:hist.filter(h=>h.src==='gps').map(h=>[h.lat,h.lng]));
+  zoneState();
+}
+setInterval(()=>{if(view())draw()},5000);
+$('#center').onclick=()=>{const v=view();if(v)map.setView([v.lat,v.lng],17)};
+
+function drawHist(){
+  $('#hlist').innerHTML=[...hist].reverse().map(h=>`<div class="item"><b>${new Date(h.ts).toLocaleString()}</b> <span class="badge ${h.src==='manual'?'m':''}">${h.src==='gps'?'GPS':'MANUAL'}</span><br><span class="mut">${h.lat.toFixed(5)}, ${h.lng.toFixed(5)} · ±${h.acc||'?'} m · ${h.dev}</span></div>`).join('')||'<p class="mut">No history yet.</p>';
+}
+$('#hclear').onclick=()=>confirm('Delete all saved location history?')&&remove(ref(db,`users/${U.uid}/history`)).catch(e=>alert(e.message));
+
+// ---------- safe zone ----------
+function drawZone(){
+  zoneC&&zoneC.remove();zoneC=null;
+  if(zone){zoneC=L.circle([zone.lat,zone.lng],{radius:zone.r,color:'#2d8cff',dashArray:'6',fillOpacity:.07}).addTo(map);
+    $('#zlat').value=zone.lat;$('#zlng').value=zone.lng;$('#zr').value=zone.r;preview()}
+}
+function preview(){
+  const a=+$('#zlat').value,b=+$('#zlng').value,r=+$('#zr').value;if(isNaN(a)||isNaN(b)||$('#zlat').value==='')return;
+  zpin&&zpin.remove();zcircle&&zcircle.remove();
+  zpin=L.marker([a,b],{icon:pin('#2d8cff')}).addTo(zmap);zcircle=L.circle([a,b],{radius:r||100,color:'#2d8cff',fillOpacity:.1}).addTo(zmap);
+  if(!zc){zmap.setView([a,b],16);zc=1}
+}
+zmap.on('click',e=>{$('#zlat').value=e.latlng.lat.toFixed(6);$('#zlng').value=e.latlng.lng.toFixed(6);preview()});
+['zlat','zlng','zr'].forEach(i=>$('#'+i).oninput=preview);
+const zm=(t,ok)=>{const e=$('#zmsg');e.style.display='block';e.className='msg '+(ok?'ok':'err');e.textContent=t};
+$('#zhere').onclick=()=>navigator.geolocation?navigator.geolocation.getCurrentPosition(p=>{$('#zlat').value=p.coords.latitude.toFixed(6);$('#zlng').value=p.coords.longitude.toFixed(6);zc=null;preview()},e=>zm(geoErr(e),0),{enableHighAccuracy:true,timeout:15000}):zm('Geolocation not supported.',0);
+$('#zsave').onclick=()=>{const lat=+$('#zlat').value,lng=+$('#zlng').value,r=+$('#zr').value;
+  if(!$('#zlat').value||!$('#zlng').value||Math.abs(lat)>90||Math.abs(lng)>180||!(r>=10&&r<=100000))return zm('Enter valid coordinates and a radius of 10–100000 m.',0);
+  inside=null;set(ref(db,`users/${U.uid}/config/zone`),{lat,lng,r}).then(()=>zm('Safe zone saved.',1)).catch(e=>zm(e.message,0))};
+$('#zdel').onclick=()=>remove(ref(db,`users/${U.uid}/config/zone`)).then(()=>{zone=null;inside=null;drawZone();zoneState();zm('Safe zone removed.',1)});
+function zoneState(){
+  const el=$('#zstate'),v=view();
+  if(!zone){el.className='pill s-none';el.querySelector('span').textContent='No safe zone set';return}
+  if(!v||demo){el.className='pill s-demo';el.querySelector('span').textContent=demo?'Demo mode – zone check off':'Waiting for first location';return}
+  const d=dist(zone.lat,zone.lng,v.lat,v.lng),old=status()==='stale'||status()==='offline',out=d>zone.r;
+  el.className='pill '+(out?'s-offline':'s-live');
+  el.querySelector('span').textContent=(out?'OUTSIDE zone · ':'Inside zone · ')+Math.round(d)+' m from centre'+(old?' (old data)':'');
+}
+function checkZone(v){
+  if(!zone||(now()-v.ts)/1000>stale())return; // only judge FRESH updates
+  const out=dist(zone.lat,zone.lng,v.lat,v.lng)>zone.r;
+  if(out&&inside!==false){raise('🚨 Bike is OUTSIDE the safe zone ('+Math.round(dist(zone.lat,zone.lng,v.lat,v.lng))+' m from centre). Updated '+new Date(v.ts).toLocaleTimeString())}
+  if(!out&&inside===false)log('Bike re-entered the safe zone.');
+  inside=!out;
+}
+function log(t){sessionAlerts.unshift(new Date().toLocaleTimeString()+' – '+t);$('#alerts').innerHTML=sessionAlerts.map(a=>`<div class="item">${a}</div>`).join('')}
+function raise(t){log(t);$('#alertTxt').textContent=t;$('#alert').classList.add('on');navigator.vibrate&&navigator.vibrate([300,150,300,150,600]);
+  if('Notification'in window&&Notification.permission==='granted')new Notification('BIKE GUARDIAN',{body:t})}
+$('#alertX').onclick=()=>$('#alert').classList.remove('on');
+
+// ---------- tracker (phone on bike) ----------
+let watch=null,wl=null,lastSent=0,sent=0;
+const tm=(t,c='')=>{const e=$('#tmsg');e.className='msg '+c;e.textContent=t};
+const geoErr=e=>({1:'Location permission denied. Open Chrome → ⋮ → Settings → Site settings → Location and allow this site, and make sure phone Location is on.',2:'GPS position unavailable. Move to open sky and check that phone Location is turned on.',3:'GPS timed out waiting for a fix. Retrying – check your sky view.'})[e.code]||e.message;
+$('#register').onclick=()=>set(ref(db,`users/${U.uid}/authorized/${devId}`),true).then(()=>tm('This phone is registered as an authorised tracker.','ok')).catch(e=>tm('Could not register: '+e.message,'err'));
+function send(lat,lng,acc,src){
+  const rec={lat,lng,acc:Math.round(acc||0),ts:serverTimestamp(),src,dev:devId};
+  set(ref(db,`users/${U.uid}/latest/${devId}`),rec).then(()=>{sent++;lastSent=Date.now();
+    $('#tstats').textContent=`Confirmed by server: ${sent} update(s). Last at ${new Date().toLocaleTimeString()}.`;
+    if(watch!==null)tm('Tracking – last fix sent '+new Date().toLocaleTimeString()+' (±'+Math.round(acc||0)+' m)','ok')})
+   .catch(e=>tm('Server rejected the update: '+e.message+(authorized[devId]?'':' – register this phone first.'),'err'));
+  set(push(ref(db,`users/${U.uid}/history`)),rec).catch(()=>{});
+}
+function onPos(p){
+  if(Date.now()-lastSent<intv()*1000&&sent>0)return;lastSent=Date.now();
+  if(!navigator.onLine)tm('GPS works but there is no network – updates are NOT reaching the server.','err');
+  send(p.coords.latitude,p.coords.longitude,p.coords.accuracy,'gps');
+}
+async function lock(){try{wl=await navigator.wakeLock.request('screen')}catch{}}
+document.addEventListener('visibilitychange',()=>{if(watch!==null&&document.visibilityState==='visible')lock()});
+$('#start').onclick=()=>{
+  if(!('geolocation'in navigator))return tm('This browser does not support the Geolocation API.','err');
+  if(!authorized[devId])return tm('Register this phone first (button above).','err');
+  if(!isSecureContext)return tm('Location needs HTTPS. Open the https:// address of your site.','err');
+  tm('Requesting location permission… tap Allow when Android asks.');
+  watch=navigator.geolocation.watchPosition(onPos,e=>tm(geoErr(e),'err'),{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  lock();$('#start').disabled=true;$('#stop').disabled=false;
+};
+$('#stop').onclick=()=>{navigator.geolocation.clearWatch(watch);watch=null;wl&&wl.release().catch(()=>{});$('#start').disabled=false;$('#stop').disabled=true;tm('Tracking stopped. The map will show STALE then OFFLINE.')};
+$('#msend').onclick=()=>{const a=parseFloat($('#mlat').value),b=parseFloat($('#mlng').value);
+  if(isNaN(a)||isNaN(b)||Math.abs(a)>90||Math.abs(b)>180)return tm('Enter valid latitude (-90..90) and longitude (-180..180).','err');
+  if(!authorized[devId])return tm('Register this phone first.','err');send(a,b,0,'manual');tm('Manual point sent (marked MANUAL).','ok')};
+window.addEventListener('offline',()=>tm('Network lost. Updates cannot be delivered until it returns.','err'));
+
+// ---------- settings ----------
+$('#stale').value=stale();$('#intv').value=intv();
+$('#ssave').onclick=()=>{localStorage.bg_stale=Math.max(10,+$('#stale').value||120);localStorage.bg_int=Math.max(3,+$('#intv').value||10);draw();alert('Saved')};
+const demoBtn=()=>$('#demo').textContent='Demo mode: '+(demo?'ON':'off');demoBtn();
+$('#demo').onclick=()=>{demo=!demo;localStorage.bg_demo=demo?'1':'0';first=true;demoBtn();draw()};
+$('#notif').onclick=()=>'Notification'in window?Notification.requestPermission().then(p=>alert('Notifications: '+p)):alert('Not supported in this browser.');
+draw();
+</script>
+</body>
+</html>
